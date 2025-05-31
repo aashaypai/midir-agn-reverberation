@@ -346,6 +346,10 @@ class FixedWidthModel:
                 
                 - 'verbose' : bool, default: False
                         verbose option to print out steps and fitting parameters
+                
+                - 'weighted' : bool, default: False
+                        If true, weights chi-square value by overlap between predicted IR points and 
+                        IR_data. Discourages lags where the lightcurves do not overlap completely.
 
         Returns
         -------
