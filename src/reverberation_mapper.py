@@ -286,7 +286,7 @@ class FixedWidthModel:
         # find the number of elements that are less than the buffer value away from the size of the array
         last_element_count = np.size(inds[inds>=np.size(conv)-buffer])
         # find the number of elements that are less than the buffer value away from 0
-        first_element_count = np.size(inds[inds==buffer-1])
+        first_element_count = np.size(inds[inds<=buffer-1])
 
         # compute the weight = (no. of overlapping indices/total indices)^2
         W = np.square((np.size(inds)-first_element_count-last_element_count)/np.size(inds))
