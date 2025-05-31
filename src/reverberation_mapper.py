@@ -151,7 +151,10 @@ class FixedWidthModel:
                 contains the top-hat convolution kernel.
         """
         # converts the decimal year width of the kernel to an integer value
-        kern_width = int(width*np.abs(lag)/np.nanmean(np.diff(self.t_opt)))
+        if width*np.abs(lag)<=1: #set maximum smoothing kernel width
+            kern_width = int(width*np.abs(lag)/np.nanmedian(np.diff(self.t_opt)))
+        else:
+            kern_width = int(1/np.nanmedian(np.diff(self.t_opt)))
         kern = self.hat(kern_width)
 
         # performs the convolution with the kernel and the median subtracted optical GP.
