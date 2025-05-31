@@ -284,7 +284,7 @@ class FixedWidthModel:
                 weight to assign to the chi-square value.
         """
         # find the number of elements that are less than the buffer value away from the size of the array
-        last_element_count = np.size(inds[inds>np.size(conv)-buffer])
+        last_element_count = np.size(inds[inds>=np.size(conv)-buffer])
         # find the number of elements that are less than the buffer value away from 0
         first_element_count = np.size(inds[inds==buffer-1])
 
