@@ -9,7 +9,7 @@ Tools for generating and manipulating synthetic astronomical lightcurves,
 including simulated DRW lightcurves and realistic cadence sampling for CRTS,
 ASAS-SN, ZTF, and WISE.
 
-Author: Mia Forsyiak, Aashay Pai
+Author: Mia Forysiak, Aashay Pai
 Created: 2025-06-01
 """
 
