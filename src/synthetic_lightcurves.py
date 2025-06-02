@@ -2,6 +2,17 @@ import numpy as np
 from astropy import units as u
 from astropy.timeseries import TimeSeries
 
+"""
+synthetic_lightcurves.py
+
+Tools for generating and manipulating synthetic astronomical lightcurves,
+including simulated DRW lightcurves and realistic cadence sampling for CRTS,
+ASAS-SN, ZTF, and WISE.
+
+Author: Mia Forsyiak, Aashay Pai
+Created: 2025-06-01
+"""
+
 # WISE_TIMES defines the midpoints of WISE observation epochs in decimal years,
 # spanning from the original WISE mission (2010) through the NEOWISE-R reactivation (2022).
 # These are used to resample or interpolate simulated lightcurves onto realistic WISE cadence.
