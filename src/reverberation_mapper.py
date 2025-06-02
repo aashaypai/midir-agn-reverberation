@@ -38,7 +38,7 @@ class FixedWidthModel:
         if optical_data_mode=='gp':
             if optical_GP is None:
                 try:
-                    self.optical_GP = self.generate_optical_gp()
+                    self.optical_GP = self.generate_optical_gp(optical_data)
                     self._assign_optical_ts(self.optical_GP)
                 except Exception as e:
                     print(f'*** Unable to generate optical GP: {e} ***')
@@ -115,20 +115,25 @@ class FixedWidthModel:
 
         return optical_lightcurve
     
-    def generate_optical_gp(self, l=[0.95, 1.05]):
+    def generate_optical_gp(self, optical_lightcurve, l=[0.95, 1.05]):
         """function that generates the optical GP for the given Plate-IFU.
 
         Parameters
         ----------
+        optical_lightcurve : astropy.timeseries.Timeseries
+            the lightcurve to interpolate using a Gaussian process. If optical_lightcuve is None, 
+            defaults to generating the optical data internally.
         l : list of float, optional
             the length hyperparameter lower and upper bounds for the GP fit. 
             Default is [0.95, 1.05].
+        
         Returns
         -------
         gp : astropy.timeseries.TimeSeries
             contains a Gaussian Process interpolation of the combined lightcurve for the given Plate-IFU.
         """
-        optical_lightcurve, _ = lp.generate_combined_lightcurve(pifu=self.plateifu)
+        if optical_lightcurve is None:
+            optical_lightcurve, _ = lp.generate_combined_lightcurve(pifu=self.plateifu)
 
         poly_subtracted_obj_p, fit, fitted_poly = lp.polyfit_lightcurves(optical_lightcurve, deg=10)
         gp, llh, hyperparams, cov = lp.GP(poly_subtracted_obj_p, kernel_num=3, lengthscale=(l[0], l[1]))
