@@ -64,10 +64,10 @@ class FixedWidthModel:
         Returns
         -------
         w1 : astropy.timeseries.TimeSeries
-                contains WISE W1 data for the given Plate-IFU.
+            contains WISE W1 data for the given Plate-IFU.
 
         w2 : astropy.timeseries.TimeSeries
-                contains WISE W2 data for the given Plate-IFU.
+            contains WISE W2 data for the given Plate-IFU.
         """
 
         mnsa_hdu, manga_wise_hdu, pipe3d_hdu = fp.import_manga(6, 1, 1)
@@ -86,15 +86,15 @@ class FixedWidthModel:
         Parameters
         ----------
         l : list of float, optional
-                the length hyperparameter lower and upper bounds for the GP fit. 
-                Default is [0.95, 1.05].
+            the length hyperparameter lower and upper bounds for the GP fit. 
+            Default is [0.95, 1.05].
         Returns
         -------
         optical_lightcurve : astropy.timeseries.TimeSeries
-                contains the combined optical lightcurve data for the given Plate-IFU.
+            contains the combined optical lightcurve data for the given Plate-IFU.
 
         gp : astropy.timeseries.TimeSeries
-                contains a Gaussian Process interpolation of the combined lightcurve for the given Plate-IFU.
+            contains a Gaussian Process interpolation of the combined lightcurve for the given Plate-IFU.
         """
         optical_lightcurve, _ = lp.generate_combined_lightcurve(pifu=self.plateifu)
 
@@ -115,11 +115,11 @@ class FixedWidthModel:
         Parameters
         ----------
         width : int
-                integer width of the returned array, which is also the width of the kernel
+            integer width of the returned array, which is also the width of the kernel
         Returns
         -------
         kern : np.ndarray
-                contains the top-hat convolution kernel.
+            contains the top-hat convolution kernel.
         """
         # cannot make an array of negative length, something has gone wrong.
         if width<0:
@@ -140,15 +140,15 @@ class FixedWidthModel:
         Parameters
         ----------
         lag : float
-                the time lag between the optical and the IR lightcurve in decimal years
+            the time lag between the optical and the IR lightcurve in decimal years
 
         width : float
-                width of the convolution kernel in relation to lag. Eg. if the width is 
-                passed to be 0.5, then the kernel length will be 0.5*lag.
+            width of the convolution kernel in relation to lag. Eg. if the width is 
+            passed to be 0.5, then the kernel length will be 0.5*lag.
         Returns
         -------
         kern : np.ndarray
-                contains the top-hat convolution kernel.
+            contains the top-hat convolution kernel.
         """
         # converts the decimal year width of the kernel to an integer value
         if width*np.abs(lag)<=1: #set maximum smoothing kernel width
@@ -183,17 +183,17 @@ class FixedWidthModel:
         Parameters
         ----------
         conv : np.ndarray
-                the convolved optical lightcurve
+            the convolved optical lightcurve
 
         IR_data : np.ndarray
-                the IR data that the optical lightcurve is fitted to
+            the IR data that the optical lightcurve is fitted to
         Returns
         -------
         amp : float
-                amplitude of the fit
+            amplitude of the fit
                 
         const : float
-                constant offset
+            constant offset
         """
         def offset(x):
             a, c = x[0], x[1]
@@ -213,23 +213,23 @@ class FixedWidthModel:
         Parameters
         ----------
         params : list of float
-                contains the time lag between the IR and optical lightcurves.
+            contains the time lag between the IR and optical lightcurves.
 
         IR_data : astropy.timeseries.TimeSeries
-                the IR data that the optical lightcurve is fitted to.
+            the IR data that the optical lightcurve is fitted to.
         Returns
         -------
         predicted_mags : np.ndarray
-                contains the predicted IR magnitudes 
+            contains the predicted IR magnitudes 
         
         predicted_errs : np.ndarray
-                contains the errors on each predicted IR magnitude
+            contains the errors on each predicted IR magnitude
 
         amp : float
-                amplitude of the fit
+            amplitude of the fit
                 
         const : float
-                constant offset
+            constant offset
         """
         lag = np.round(params[0], 7)#width=, params[1]
         width = 0.5 #self.width
@@ -271,20 +271,20 @@ class FixedWidthModel:
         Parameters
         ----------
         conv : np.ndarray
-                contains the convolved optical magnitudes
+            contains the convolved optical magnitudes
 
         inds : np.ndarray
-                contains the indices of closest overlap of lagged times and IR times
+            contains the indices of closest overlap of lagged times and IR times
 
         buffer : int, optional
-                the buffer from zeroth and last element to weigh. For example, if the buffer is 1,
-                the weight will change only if the index is the 0th or last element. If the buffer
-                is 100, any index that is less than 100 away from the zero or that is less than 100 away from
-                the last element will be weighted.
+            the buffer from zeroth and last element to weigh. For example, if the buffer is 1,
+            the weight will change only if the index is the 0th or last element. If the buffer
+            is 100, any index that is less than 100 away from the zero or that is less than 100 away from
+            the last element will be weighted.
         Returns
         -------
         W : float
-                weight to assign to the chi-square value.
+            weight to assign to the chi-square value.
         """
         # find the number of elements that are less than the buffer value away from the size of the array
         last_element_count = np.size(inds[inds>=np.size(conv)-buffer])
@@ -302,15 +302,15 @@ class FixedWidthModel:
         Parameters
         ----------
         params : list of float
-                contains the time lag between the IR and optical lightcurves.
+            contains the time lag between the IR and optical lightcurves.
 
         IR_data : astropy.timeseries.TimeSeries
-                the IR data that the optical lightcurve is fitted to.
+            the IR data that the optical lightcurve is fitted to.
         Returns
         -------
         chisq : float
-                chi-square value of the fit between the IR_data and predicted IR values
-                generated from the optical lighcurve
+            chi-square value of the fit between the IR_data and predicted IR values
+            generated from the optical lighcurve
         """
         # generate IR prediction
         IR_data = args[0]
@@ -342,22 +342,22 @@ class FixedWidthModel:
             - 'mag_err'  : magnitude uncertainties 
 
         kwargs : dict, optional
-                optional keyword arguments. supported keys:
+            optional keyword arguments. supported keys:
 
-                - 'ranges' : tuple, default: ((-5, 5, 0.01),)
-                        the range over which to brute force fit 
+            - 'ranges' : tuple, default: ((-5, 5, 0.01),)
+                    the range over which to brute force fit 
                 
-                - 'verbose' : bool, default: False
-                        verbose option to print out steps and fitting parameters
+            - 'verbose' : bool, default: False
+                    verbose option to print out steps and fitting parameters
                 
-                - 'weighted' : bool, default: False
-                        If true, weights chi-square value by overlap between predicted IR points and 
-                        IR_data. Discourages lags where the lightcurves do not overlap completely.
+            - 'weighted' : bool, default: False
+                    If true, weights chi-square value by overlap between predicted IR points and 
+                    IR_data. Discourages lags where the lightcurves do not overlap completely.
 
         Returns
         -------
         best_fit_params : list of float
-                contains the best fit parameters in the following order: lag, amp, const, chi-square
+            contains the best fit parameters in the following order: lag, amp, const, chi-square
         """
         # If IR_data is 1 or 2, load in W1/W2 data
         match IR_data:
