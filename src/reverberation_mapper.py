@@ -1,3 +1,5 @@
+import astropy.time
+import astropy.timeseries
 import numpy as np
 import astropy
 from scipy import optimize
@@ -8,7 +10,7 @@ import lightcurve_processing as lp
 
 class FixedWidthModel:
         
-    def __init__(self, plateifu, optical_data=None, verbose=False):
+    def __init__(self, plateifu, optical_data=None, optical_GP=None, verbose=False, optical_data_mode='raw'):
         
         self._verbose = verbose
         self.plateifu = plateifu
@@ -16,47 +18,66 @@ class FixedWidthModel:
         # create an array that stores the results of every chi-square run
         self.results_log = []
 
-        # this code block checks if optical data (GP) is provided when the FixedWidthModel is initialized. 
-        # If it isn't, the FixedWidthModel will try to generate the GP. 
-        # If it fails, it will print the error message.
-        if optical_data is None:
+        if optical_data_mode not in ['gp', 'raw']:
+            raise ValueError("optical_data_mode must be either 'gp' or 'raw'")
+        
+        if optical_data_mode=='raw':
+            if optical_data is None:
+                try:
+                    self.optical_data = self.generate_optical_lightcurve()
+                    self._assign_optical_ts(self.optical_data)
+                except Exception as e:
+                    print(f'*** Unable to generate optical data: {e} ***')
+            else:
+                self._validate_ts(optical_data, 'optical_data')
+                self.optical_data = optical_data
+                self._assign_optical_ts(self.optical_data)
 
-            try:
-                self.optical_data, self.optical_GP = self.generate_optical_lightcurve()
+            if self._verbose: print('*** Using raw optical data ***')
+        
+        if optical_data_mode=='gp':
+            if optical_GP is None:
+                try:
+                    self.optical_GP = self.generate_optical_gp()
+                    self._assign_optical_ts(self.optical_GP)
+                except Exception as e:
+                    print(f'*** Unable to generate optical GP: {e} ***')
+            else:
+                self._validate_ts(optical_GP, 'optical_GP')
+                self.optical_GP = optical_GP
+                self._assign_optical_ts(self.optical_GP)
                 
-                self.t_opt = self.optical_GP['time'].to_value('decimalyear')
-                self.m_opt = self.optical_GP['mag']
-                self.err_opt = self.optical_GP['mag_err']
-                if self._verbose: print('*** Optical data and GP generated ***')
-
-            except Exception as e:
-                print(f'*** Unable to generate optical data: {e} ***')
-
-        # If the optical GP is provided, it sets the optical_GP, t_opt, m_opt, err_opt instance variables 
-        # with the given data
-        else:
-            self.optical_GP = optical_data
-            
-            self.t_opt = self.optical_GP['time'].to_value('decimalyear')
-            self.m_opt = self.optical_GP['mag']
-            self.err_opt = self.optical_GP['mag_err']
-
+            if self._verbose: print('*** Using optical GP data ***')
+    
         # generate W1 & W2 data
         try:
             self.w1, self.w2 = self.generate_wise_lightcurve()
-
-            self.t_w1 = self.w1['time'].to_value('decimalyear')
-            self.m_w1 = self.w1['mag']
-            self.err_w1 = self.w1['mag_err']
-
-            self.t_w2 = self.w2['time'].to_value('decimalyear')
-            self.m_w2 = self.w2['mag']
-            self.err_w2 = self.w2['mag_err']
+            self._assign_wise_ts()
 
         except Exception as e:
             print(f'*** Unable to generate IR data: {e} ***')
 
 
+    def _validate_ts(self, ts, name):
+        if not isinstance(ts, astropy.timeseries.TimeSeries):
+                raise TypeError(f"{name} must be an astropy.timeseries.TimeSeries object")
+        required = {'time', 'mag', 'mag_err'}
+        if not required.issubset(ts.colnames):
+            raise ValueError(f"{name} must contain columns {required}")
+        
+    def _assign_optical_ts(self, ts):
+        self.t_opt = ts['time'].to_value('decimalyear')
+        self.m_opt = ts['mag']
+        self.err_opt = ts['mag_err']
+
+    def _assign_wise_ts(self):
+        self.t_w1 = self.w1['time'].to_value('decimalyear')
+        self.m_w1 = self.w1['mag']
+        self.err_w1 = self.w1['mag_err']
+
+        self.t_w2 = self.w2['time'].to_value('decimalyear')
+        self.m_w2 = self.w2['mag']
+        self.err_w2 = self.w2['mag_err']
 
     def generate_wise_lightcurve(self): 
         """function that generates the WISE Infrared lightcurve GP for the given Plate-IFU.
@@ -80,8 +101,22 @@ class FixedWidthModel:
 
         return w1, w2
     
-    def generate_optical_lightcurve(self, l=[0.95, 1.05]):
-        """function that generates the optical combined lightcurve & GP for the given Plate-IFU.
+    def generate_optical_lightcurve(self):
+        """function that generates the optical combined lightcurve for the given Plate-IFU.
+
+        Returns
+        -------
+        optical_lightcurve : astropy.timeseries.TimeSeries
+            contains the combined optical lightcurve data for the given Plate-IFU.
+
+        """
+        optical_lightcurve, _ = lp.generate_combined_lightcurve(pifu=self.plateifu)
+        if self._verbose: print(f'*** Optical data generated ***')
+
+        return optical_lightcurve
+    
+    def generate_optical_gp(self, l=[0.95, 1.05]):
+        """function that generates the optical GP for the given Plate-IFU.
 
         Parameters
         ----------
@@ -90,9 +125,6 @@ class FixedWidthModel:
             Default is [0.95, 1.05].
         Returns
         -------
-        optical_lightcurve : astropy.timeseries.TimeSeries
-            contains the combined optical lightcurve data for the given Plate-IFU.
-
         gp : astropy.timeseries.TimeSeries
             contains a Gaussian Process interpolation of the combined lightcurve for the given Plate-IFU.
         """
@@ -106,7 +138,7 @@ class FixedWidthModel:
         
         if self._verbose: print(f'*** Optical GP generated *** \n*** GP kernel {str(hyperparams)} ***')
 
-        return optical_lightcurve, gp
+        return gp
     
 
     def hat(self, width):
