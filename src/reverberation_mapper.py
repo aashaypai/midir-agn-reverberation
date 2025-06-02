@@ -10,7 +10,7 @@ import lightcurve_processing as lp
 
 class FixedWidthModel:
         
-    def __init__(self, plateifu, optical_data=None, optical_GP=None, verbose=False, optical_data_mode='raw'):
+    def __init__(self, plateifu=None, optical_data=None, optical_GP=None, verbose=False, optical_data_mode='raw'):
         
         self._verbose = verbose
         self.plateifu = plateifu
@@ -51,11 +51,13 @@ class FixedWidthModel:
     
         # generate W1 & W2 data
         try:
+            
             self.w1, self.w2 = self.generate_wise_lightcurve()
             self._assign_wise_ts()
 
         except Exception as e:
-            print(f'*** Unable to generate IR data: {e} ***')
+            if self.plateifu is not None:
+                print(f'*** Unable to generate IR data: {e} ***')
 
 
     def _validate_ts(self, ts, name):
@@ -90,7 +92,8 @@ class FixedWidthModel:
         w2 : astropy.timeseries.TimeSeries
             contains WISE W2 data for the given Plate-IFU.
         """
-
+        if self.plateifu is None:
+            if self._verbose: print(f'*** W1 & W2 not available for plate-IFU: {self.plateifu}, enter data manually ***')
         mnsa_hdu, manga_wise_hdu, pipe3d_hdu = fp.import_manga(6, 1, 1)
         mnsa, mwv, pipe3d = mnsa_hdu.data, manga_wise_hdu.data, pipe3d_hdu.data 
 
@@ -132,9 +135,10 @@ class FixedWidthModel:
         gp : astropy.timeseries.TimeSeries
             contains a Gaussian Process interpolation of the combined lightcurve for the given Plate-IFU.
         """
+        # if optical_lightcurve is not given, use plate-IFU to generate optical data.
         if optical_lightcurve is None:
             optical_lightcurve, _ = lp.generate_combined_lightcurve(pifu=self.plateifu)
-
+        # else, use given optical data to fit GP.
         poly_subtracted_obj_p, fit, fitted_poly = lp.polyfit_lightcurves(optical_lightcurve, deg=10)
         gp, llh, hyperparams, cov = lp.GP(poly_subtracted_obj_p, kernel_num=3, lengthscale=(l[0], l[1]))
         gp_fitted_poly =lp.make_polynomial(gp, fit)

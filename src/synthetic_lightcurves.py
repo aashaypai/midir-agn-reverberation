@@ -160,8 +160,8 @@ def generate_sim_lc(t = 7300, tau = 300, z = 0, mean = 0, SF_inf = 0.3, width = 
 
     w1_tophat_kernel = tophat(kern_width)
 
-    w2_tophat_kernel = tophat(kern_width)
-
+    w2_tophat_kernel = tophat(2*kern_width)
+    
     w1_sim = np.convolve(w1_tophat_kernel, m_sim, "same")
 
     w2_sim = np.convolve(w2_tophat_kernel, m_sim, "same")
