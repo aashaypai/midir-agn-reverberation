@@ -56,7 +56,7 @@ class FixedWidthModel:
             self._assign_wise_ts()
 
         except Exception as e:
-            if self.plateifu is not None:
+            if self.plateifu is not None: #make sure there is no exception when plate-IFU is not given
                 print(f'*** Unable to generate IR data: {e} ***')
 
 
