@@ -275,7 +275,8 @@ class FixedWidthModel:
         lag = np.round(params[0], 7)#width=, params[1]
         width = 0.5 #self.width
         #width = self.check_width(lag, width)
-
+        if self.wise_band == 2: #longer lags for W2
+            lag *= 1.2
         conv, t_conv, err_conv = self.convolve(lag, width)
         
         # At this point, you have the IR data from WISE, and the convolved optical data. I have ~20 time values in 
@@ -404,9 +405,11 @@ class FixedWidthModel:
         match IR_data:
             case 1:
                 IR_data = self.w1
+                self.wise_band = 1
                 if self._verbose: print(f'*** fitting optical and W1 lightcurves ***')
             case 2:
                 IR_data = self.w2
+                self.wise_band = 2
                 if self._verbose: print(f'*** fitting optical and W2 lightcurves ***')
             
             # If IR_data is any other lightcurve, it must be an astropy timeseries
@@ -418,6 +421,7 @@ class FixedWidthModel:
                     raise ValueError(f"TimeSeries is missing required column(s): {', '.join(missing)}")
 
                 IR_data = ts
+                self.wise_band = kwargs.get('wise_band', None)
             case _:
                 raise ValueError("IR_data must be 1, 2, or an astropy TimeSeries.")
 
