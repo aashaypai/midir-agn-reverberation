@@ -105,7 +105,7 @@ def tophat(width):
     kern = y/width
     return kern
 
-def generate_sim_lc(t = 7300, tau = 300, z = 0, mean = 0, SF_inf = 0.3, width = 0.5, lag = 0, time_start="2005-01-01T12:00:00"):
+def generate_sim_lc(t = 7300, tau = 300, z = 0, mean = 0, SF_inf = 0.3, width = 0.5, lag = 0, w2_scale = 1.2, noise = 0.2, time_start="2005-01-01T12:00:00"):
     """
     Generate synthetic optical and infrared lightcurves using a damped random walk (DRW) model 
     and top-hat convolution to simulate emission line or reprocessing lags.
@@ -131,7 +131,13 @@ def generate_sim_lc(t = 7300, tau = 300, z = 0, mean = 0, SF_inf = 0.3, width = 
         width of the top-hat kernel (as a fraction of the lag) used for convolution. Default is 0.5.
     
     lag : float, optional
-        lag in days to apply to the W1 and W2 lightcurves relative to the optical lightcurve. Default is 0.
+        lag in days to apply to the W1 lightcurve relative to the optical lightcurve. Default is 0.
+
+    w2_scale : float, optional
+        scaling factor applied to the lag used in computing the W2 lightcurve. Default is 1.2. 
+
+    noise : float, optional
+        fixed mag uncertainty to be treated as mag_err for simulated lightcurves. Default is 0.2.
     
     time_start : str or astropy.time.Time, optional
         start time of the simulated lightcurves. Default is "2005-01-01T12:00:00".
@@ -152,31 +158,33 @@ def generate_sim_lc(t = 7300, tau = 300, z = 0, mean = 0, SF_inf = 0.3, width = 
     -----
     - DRW generation is performed by `generate_drw()` (assumed to return time and magnitude arrays).
     - Convolution uses a normalized top-hat kernel of width `width * |lag| / median(dt)`.
-    - Noise is added with fixed magnitude uncertainty of 0.1 mag.
+    - Noise is added with fixed magnitude uncertainty.
     """
     t_sim, m_sim = generate_drw()
 
-    kern_width = int(width*np.abs(lag)/np.nanmedian(np.diff(t_sim)))
+    w1_kern_width = int(width*np.abs(lag)/np.nanmedian(np.diff(t_sim)))
 
-    w1_tophat_kernel = tophat(kern_width)
+    w2_kern_width = int(width*np.abs(w2_scale*lag)/np.nanmedian(np.diff(t_sim)))
 
-    w2_tophat_kernel = tophat(2*kern_width)
+    w1_tophat_kernel = tophat(w1_kern_width)
+
+    w2_tophat_kernel = tophat(w2_kern_width)
     
     w1_sim = np.convolve(w1_tophat_kernel, m_sim, "same")
 
     w2_sim = np.convolve(w2_tophat_kernel, m_sim, "same")
 
-    noise = np.full(t, 0.1)
+    Noise = np.full(t, noise)
     
     sim_optical_lc = TimeSeries(time_start=time_start, time_delta=1 * u.d, n_samples=t, 
-                 data = {"mag": m_sim,"mag_err": noise})
+                 data = {"mag": m_sim,"mag_err": Noise})
 
     sim_w1_lc = TimeSeries(time_start=time_start, time_delta=1 * u.d, n_samples=t, 
-                 data = {"mag": w1_sim,"mag_err": noise})
+                 data = {"mag": w1_sim,"mag_err": Noise})
     sim_w1_lc['time'] += (lag*u.day)
     sim_w2_lc = TimeSeries(time_start=time_start, time_delta=1 * u.d, n_samples=t, 
-                 data = {"mag": w2_sim,"mag_err": noise})
-    sim_w2_lc['time'] += (lag*u.day)
+                 data = {"mag": w2_sim,"mag_err": Noise})
+    sim_w2_lc['time'] += ((w2_scale*lag)*u.day)
     return sim_optical_lc, sim_w1_lc, sim_w2_lc 
 
 def simulate_crts(times, base_year=2005):
