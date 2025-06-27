@@ -367,13 +367,13 @@ def generate_noisy_lc(lag=None, synth_opt_lc_full=None, synth_w1_full=None, synt
     lag : float, optional
         time lag between optical and IR lightcurves in days. Required if generating lightcurves from scratch.
     
-    synth_opt_lc_full : TimeSeries, optional
+    synth_opt_lc_full : astropy.timeseries.TimeSeries, optional
         full synthetic optical lightcurve. Must be provided if not generating from `lag`.
 
-    synth_w1_full : TimeSeries, optional
+    synth_w1_full : astropy.timeseries.TimeSeries, optional
         full synthetic W1 lightcurve. Must be provided if not generating from `lag`.
 
-    synth_w2_full : TimeSeries, optional
+    synth_w2_full : astropy.timeseries.TimeSeries, optional
         full synthetic W2 lightcurve. Must be provided if not generating from `lag`.
 
     **kwargs : dict
@@ -381,13 +381,13 @@ def generate_noisy_lc(lag=None, synth_opt_lc_full=None, synth_w1_full=None, synt
 
     Returns
     -------
-    synth_opt_lc : TimeSeries
+    synth_opt_lc : astropy.timeseries.TimeSeries
         masked optical lightcurve matching typical survey cadence.
 
-    synth_w1 : TimeSeries
+    synth_w1 : astropy.timeseries.TimeSeries
         WISE W1 lightcurve resampled to WISE cadence, scaled in amplitude and with added Gaussian noise.
 
-    synth_w2 : TimeSeries
+    synth_w2 : astropy.timeseries.TimeSeries
         WISE W2 lightcurve resampled to WISE cadence, scaled in amplitude and with added Gaussian noise.
 
     Raises
