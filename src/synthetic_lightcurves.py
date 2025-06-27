@@ -190,13 +190,13 @@ def generate_sim_lc(t = 7300, tau = 300, z = 0, mean = 0, SF_inf = 0.3, width = 
         return sim_optical_lc, sim_w1_lc, sim_w2_lc
 
     else: 
-        mag_uncertainty = np.random.normal(0, noise, (len(m_sim),))
-        w1_uncertainty = np.random.normal(0, noise, (len(w1_sim),))
-        w2_uncertainty = np.random.normal(0, noise, (len(w2_sim),))
+        mag_u = np.random.normal(0, noise, (len(m_sim),))
+        w1_u = np.random.normal(0, noise, (len(w1_sim),))
+        w2_u = np.random.normal(0, noise, (len(w2_sim),))
 
-        m_sim += mag_uncertainty
-        w1_sim += w1_uncertainty
-        w2_sim += w2_uncertainty
+        m_sim += mag_u
+        w1_sim += w1_u
+        w2_sim += w2_u
 
         sim_optical_lc = TimeSeries(time_start=time_start, time_delta=1 * u.d, n_samples=t, 
                  data = {"mag": m_sim,"mag_err": Noise})
