@@ -105,7 +105,7 @@ def tophat(width):
     kern = y/width
     return kern
 
-def generate_sim_lc(t = 7300, tau = 300, z = 0, mean = 0, SF_inf = 0.3, width = 0.5, lag = 0, w2_scale = 1.2, noise = 0.2, time_start="2005-01-01T12:00:00"):
+def generate_sim_lc(t = 7300, tau = 300, z = 0, mean = 0, SF_inf = 0.3, width = 0.5, lag = 0, w2_scale = 1.2, noise = 0.2, mag_noise = False, time_start="2005-01-01T12:00:00"):
     """
     Generate synthetic optical and infrared lightcurves using a damped random walk (DRW) model 
     and top-hat convolution to simulate emission line or reprocessing lags.
@@ -138,6 +138,9 @@ def generate_sim_lc(t = 7300, tau = 300, z = 0, mean = 0, SF_inf = 0.3, width = 
 
     noise : float, optional
         fixed mag uncertainty to be treated as mag_err for simulated lightcurves. Default is 0.2.
+
+    mag_noise: bool, optional
+        adds fixed mag uncertainty defined by noise value to mag data if True. Default is False. 
     
     time_start : str or astropy.time.Time, optional
         start time of the simulated lightcurves. Default is "2005-01-01T12:00:00".
@@ -163,29 +166,48 @@ def generate_sim_lc(t = 7300, tau = 300, z = 0, mean = 0, SF_inf = 0.3, width = 
     t_sim, m_sim = generate_drw()
 
     w1_kern_width = int(width*np.abs(lag)/np.nanmedian(np.diff(t_sim)))
-
     w2_kern_width = int(width*np.abs(w2_scale*lag)/np.nanmedian(np.diff(t_sim)))
 
     w1_tophat_kernel = tophat(w1_kern_width)
-
     w2_tophat_kernel = tophat(w2_kern_width)
     
     w1_sim = np.convolve(w1_tophat_kernel, m_sim, "same")
-
     w2_sim = np.convolve(w2_tophat_kernel, m_sim, "same")
 
     Noise = np.full(t, noise)
+
+    if mag_noise == False:
     
-    sim_optical_lc = TimeSeries(time_start=time_start, time_delta=1 * u.d, n_samples=t, 
+        sim_optical_lc = TimeSeries(time_start=time_start, time_delta=1 * u.d, n_samples=t, 
                  data = {"mag": m_sim,"mag_err": Noise})
 
-    sim_w1_lc = TimeSeries(time_start=time_start, time_delta=1 * u.d, n_samples=t, 
+        sim_w1_lc = TimeSeries(time_start=time_start, time_delta=1 * u.d, n_samples=t, 
                  data = {"mag": w1_sim,"mag_err": Noise})
-    sim_w1_lc['time'] += (lag*u.day)
-    sim_w2_lc = TimeSeries(time_start=time_start, time_delta=1 * u.d, n_samples=t, 
+        sim_w1_lc['time'] += (lag*u.day)
+        sim_w2_lc = TimeSeries(time_start=time_start, time_delta=1 * u.d, n_samples=t, 
                  data = {"mag": w2_sim,"mag_err": Noise})
-    sim_w2_lc['time'] += ((w2_scale*lag)*u.day)
-    return sim_optical_lc, sim_w1_lc, sim_w2_lc 
+        sim_w2_lc['time'] += ((w2_scale*lag)*u.day)
+        return sim_optical_lc, sim_w1_lc, sim_w2_lc
+
+    else: 
+        mag_uncertainty = np.random.normal(0, noise, (len(m_sim),))
+        w1_uncertainty = np.random.normal(0, noise, (len(w1_sim),))
+        w2_uncertainty = np.random.normal(0, noise, (len(w2_sim),))
+
+        m_sim += mag_uncertainty
+        w1_sim += w1_uncertainty
+        w2_sim += w2_uncertainty
+
+        sim_optical_lc = TimeSeries(time_start=time_start, time_delta=1 * u.d, n_samples=t, 
+                 data = {"mag": m_sim,"mag_err": Noise})
+
+        sim_w1_lc = TimeSeries(time_start=time_start, time_delta=1 * u.d, n_samples=t, 
+                 data = {"mag": w1_sim,"mag_err": Noise})
+        sim_w1_lc['time'] += (lag*u.day)
+        sim_w2_lc = TimeSeries(time_start=time_start, time_delta=1 * u.d, n_samples=t, 
+                 data = {"mag": w2_sim,"mag_err": Noise})
+        sim_w2_lc['time'] += ((w2_scale*lag)*u.day)
+        return sim_optical_lc, sim_w1_lc, sim_w2_lc 
 
 def simulate_crts(times, base_year=2005):
     """
